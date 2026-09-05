@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
+import { Boxes, MonitorSmartphone } from "lucide-react";
 import {
+  APP_AI_STAGES,
+  NOT_APPLICABLE_PROGRESS,
   STAGES,
   createProduct,
   deleteProduct,
+  isSoftwareProduct,
+  progressToStatus,
+  stageToProgress,
+  statusToProgress,
   updateProduct,
   type Product,
   type ProductInput,
@@ -26,6 +33,12 @@ const EMPTY: ProductInput = {
 const inputCls =
   "w-full rounded-md bg-ink ring-1 ring-line px-3 py-2 text-sm text-chrome placeholder:text-dim focus:outline-none focus:ring-glow/60";
 const labelCls = "block font-mono text-[10px] uppercase tracking-[0.15em] text-dim mb-1.5";
+
+const HARDWARE_STATUS_FIELD = ["hw_progress", "硬件状态"] as const;
+const DIGITAL_STATUS_FIELDS = [
+  ["app_progress", "App 状态"],
+  ["ai_progress", "AI 状态"],
+] as const;
 
 export function ProductDialog({
   open,
@@ -72,6 +85,28 @@ export function ProductDialog({
 
   const set = <K extends keyof ProductInput>(k: K, v: ProductInput[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  const softwareProduct = isSoftwareProduct(form);
+  const statusFields = softwareProduct
+    ? DIGITAL_STATUS_FIELDS
+    : ([HARDWARE_STATUS_FIELD, ...DIGITAL_STATUS_FIELDS] as const);
+
+  const setProductType = (type: "hardware" | "software") => {
+    setForm((current) => ({
+      ...current,
+      hw_progress:
+        type === "software"
+          ? NOT_APPLICABLE_PROGRESS
+          : isSoftwareProduct(current)
+            ? stageToProgress("概念验证")
+            : current.hw_progress,
+      stage:
+        type === "hardware" &&
+        (current.stage === "使用中" || current.stage === "迭代中" || current.stage === "Bug修复中")
+          ? "已发售"
+          : current.stage,
+    }));
+  };
 
   const save = async () => {
     if (!form.name.trim()) return setError("请填写产品名称");
@@ -154,36 +189,74 @@ export function ProductDialog({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            {(
-              [
-                ["hw_progress", "硬件进度 %"],
-                ["app_progress", "App 进度 %"],
-                ["ai_progress", "AI 进度 %"],
-              ] as const
-            ).map(([k, label]) => (
-              <div key={k}>
-                <label className={labelCls}>{label}</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  className={inputCls}
-                  value={form[k]}
-                  onChange={(e) =>
-                    set(k, Math.max(0, Math.min(100, Number(e.target.value) || 0)))
-                  }
-                />
-              </div>
-            ))}
+          <div>
+            <label className={labelCls}>产品类型</label>
+            <div
+              className="grid grid-cols-2 gap-1 rounded-md bg-ink p-1 ring-1 ring-line"
+              role="radiogroup"
+              aria-label="产品类型"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!softwareProduct}
+                onClick={() => setProductType("hardware")}
+                className={
+                  !softwareProduct
+                    ? "inline-flex h-9 items-center justify-center gap-2 rounded chrome-surface font-mono text-[12px] text-ink"
+                    : "inline-flex h-9 items-center justify-center gap-2 rounded font-mono text-[12px] text-dim hover:text-chrome"
+                }
+              >
+                <Boxes className="size-4" />
+                硬件产品
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={softwareProduct}
+                onClick={() => setProductType("software")}
+                className={
+                  softwareProduct
+                    ? "inline-flex h-9 items-center justify-center gap-2 rounded chrome-surface font-mono text-[12px] text-ink"
+                    : "inline-flex h-9 items-center justify-center gap-2 rounded font-mono text-[12px] text-dim hover:text-chrome"
+                }
+              >
+                <MonitorSmartphone className="size-4" />
+                软件产品
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {statusFields.map(([k, label]) => {
+              const options = k === "hw_progress" ? STAGES : APP_AI_STAGES;
+              return (
+                <div key={k}>
+                  <label className={labelCls}>{label}</label>
+                  <select
+                    className={inputCls}
+                    value={progressToStatus(form[k])}
+                    onChange={(e) =>
+                      set(k, statusToProgress(e.target.value as (typeof APP_AI_STAGES)[number]))
+                    }
+                  >
+                    {options.map((stage) => (
+                      <option key={stage} value={stage}>
+                        {stage}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            })}
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             {(
               [
-                ["trial_date", "预期试产"],
-                ["mp_date", "预期量产"],
-                ["launch_date", "正式发售"],
+                ["trial_date", softwareProduct ? "预期测试" : "预期试产"],
+                ["mp_date", softwareProduct ? "预期上线" : "预期量产"],
+                ["launch_date", softwareProduct ? "正式发布" : "正式发售"],
               ] as const
             ).map(([k, label]) => (
               <div key={k}>
@@ -206,7 +279,7 @@ export function ProductDialog({
                 value={form.stage}
                 onChange={(e) => set("stage", e.target.value)}
               >
-                {STAGES.map((s) => (
+                {(softwareProduct ? APP_AI_STAGES : STAGES).map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>

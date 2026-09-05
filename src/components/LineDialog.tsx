@@ -27,7 +27,11 @@ export function LineDialog({
     setSaving(true);
     setError("");
     try {
-      await createLine({ name: name.trim(), code: code.trim() || name.trim()[0] || "?", owner: owner.trim() });
+      await createLine({
+        name: name.trim(),
+        code: code.trim() || name.trim()[0] || "?",
+        owner: owner.trim(),
+      });
       setName("");
       setCode("");
       setOwner("");
@@ -59,7 +63,7 @@ export function LineDialog({
               className={inputCls}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="如 音频 / 智能音箱"
+              placeholder="如 NEEWER HOME"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
