@@ -40,7 +40,7 @@ export function ProductDialog({
   onSaved: () => void;
   lines: ProductLine[];
   product: Product | null;
-  defaultLineId?: string;
+  defaultLineId?: string | undefined;
 }) {
   const [form, setForm] = useState<ProductInput>(EMPTY);
   const [saving, setSaving] = useState(false);
