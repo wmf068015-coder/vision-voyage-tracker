@@ -14,7 +14,92 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      product_lines: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          owner: string
+          sort_order: number
+        }
+        Insert: {
+          code?: string
+          created_at?: string
+          id?: string
+          name: string
+          owner?: string
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          owner?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          ai_progress: number
+          app_progress: number
+          at_risk: boolean
+          created_at: string
+          description: string
+          hw_progress: number
+          id: string
+          launch_date: string | null
+          line_id: string
+          mp_date: string | null
+          name: string
+          stage: string
+          trial_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_progress?: number
+          app_progress?: number
+          at_risk?: boolean
+          created_at?: string
+          description?: string
+          hw_progress?: number
+          id?: string
+          launch_date?: string | null
+          line_id: string
+          mp_date?: string | null
+          name: string
+          stage?: string
+          trial_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_progress?: number
+          app_progress?: number
+          at_risk?: boolean
+          created_at?: string
+          description?: string
+          hw_progress?: number
+          id?: string
+          launch_date?: string | null
+          line_id?: string
+          mp_date?: string | null
+          name?: string
+          stage?: string
+          trial_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "product_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
